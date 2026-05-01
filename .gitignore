@@ -2,6 +2,13 @@
 
 # dependencies
 /node_modules
+
+# pnpm 전용일 때 npm/yarn이 만든 락은 커밋하지 않음
+/package-lock.json
+/yarn.lock
+
+# pnpm 로컬 store (프로젝트 안에 두는 설정 사용 시 생성됨 — push 대상 아님)
+/.pnpm-store/
 /.pnp
 .pnp.*
 .yarn/*
