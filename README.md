@@ -1,4 +1,6 @@
-# borwn
+# brown
+
+> Live: **[brown-lyart.vercel.app](https://brown-lyart.vercel.app/)**
 
 Next.js(App Router)와 **한국투자 Open API(KIS)** 연동 샘플입니다.  
 클라이언트는 우리 서버의 **`/api/*` Route Handler**만 호출하고, **앱 키·시크릿·KIS 접근 토큰**은 모두 **서버(`entities/kis`)**에서만 다룹니다.
