@@ -27,3 +27,19 @@ export const formatSignedPercent = (value: number): string => {
   if (value > 0) return `+${percentFormatter.format(value)}%`;
   return `${percentFormatter.format(value)}%`;
 };
+
+const compactKrwFormatter = new Intl.NumberFormat("ko-KR", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const compactNumberFormatter = new Intl.NumberFormat("ko-KR", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export const formatCompactKrw = (value: number): string =>
+  `${compactKrwFormatter.format(value)}원`;
+
+export const formatCompactNumber = (value: number): string =>
+  compactNumberFormatter.format(value);

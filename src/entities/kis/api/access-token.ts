@@ -1,21 +1,27 @@
+import {
+  getKisRestEnv,
+  KIS_REST_ENV_MISSING,
+  type KisRestEnv,
+} from "../config/rest-env";
 import type { GetKisTokenResult, KisTokenResponse } from "../model/types";
-import { kisPublicPost } from "./kis-public-http";
+import { kisPublicPostFor } from "./kis-public-http";
 
-/** appkey별로 저장. Next dev / 단일 노드에서는 프로세스가 살아 있는 동안 유지됨 */
+/** mode + baseUrl + appKey 별로 토큰 캐시 (실전/모의 분리, dev process 동안 유지) */
 const cache = new Map<string, { accessToken: string; expiresAtMs: number }>();
-/** 동시에 캐시 미스 여러 번이면 발급 1회만 하도록 */
+/** 동시 캐시 미스시 발급 1회 보장 */
 const inflight = new Map<string, Promise<KisTokenResponse>>();
 
 /** 만료까지 이 여유(ms) 미만이면 재발급 */
 const REFRESH_MARGIN_MS = 60_000;
 
-const cacheKey = (baseUrl: string, appKey: string) => `${baseUrl}::${appKey}`;
+const cacheKey = (env: KisRestEnv) =>
+  `${env.mode}:${env.baseUrl}::${env.appKey}`;
 
-const postToken = async (appKey: string, appSecret: string): Promise<KisTokenResponse> => {
-  const data = await kisPublicPost<KisTokenResponse>("/oauth2/tokenP", {
+const postToken = async (env: KisRestEnv): Promise<KisTokenResponse> => {
+  const data = await kisPublicPostFor<KisTokenResponse>(env, "/oauth2/tokenP", {
     grant_type: "client_credentials",
-    appkey: appKey,
-    appsecret: appSecret,
+    appkey: env.appKey,
+    appsecret: env.appSecret,
   });
 
   if (!data?.access_token) {
@@ -26,19 +32,13 @@ const postToken = async (appKey: string, appSecret: string): Promise<KisTokenRes
 };
 
 /**
- * KIS는 접근토큰 발급이 **1분당 1회** 등으로 제한됨 → 프로세스 메모리에 보관 후 재사용.
- * `expires_in` 기준으로 만료 직전에만 다시 발급.
+ * KIS 접근토큰 발급은 분당 횟수 제한이 있어 프로세스 메모리에 보관 후 재사용.
+ * `expires_in` 기준 만료 직전에만 다시 발급.
  */
-export const getKisAccessToken = async (): Promise<GetKisTokenResult> => {
-  const baseUrl = process.env.KIS_BASE_URL?.replace(/\/$/, "");
-  const appKey = process.env.KIS_APP_KEY?.trim();
-  const appSecret = process.env.KIS_APP_SECRET?.trim();
-
-  if (!baseUrl || !appKey || !appSecret) {
-    throw new Error("KIS_BASE_URL, KIS_APP_KEY, KIS_APP_SECRET를 .env.local에 설정하세요.");
-  }
-
-  const key = cacheKey(baseUrl, appKey);
+export const getKisAccessTokenFor = async (
+  env: KisRestEnv,
+): Promise<GetKisTokenResult> => {
+  const key = cacheKey(env);
   const now = Date.now();
   const hit = cache.get(key);
   if (hit && hit.expiresAtMs > now + REFRESH_MARGIN_MS) {
@@ -53,7 +53,7 @@ export const getKisAccessToken = async (): Promise<GetKisTokenResult> => {
   let p = inflight.get(key);
   if (!p) {
     p = (async () => {
-      const data = await postToken(appKey, appSecret);
+      const data = await postToken(env);
       const receivedAt = Date.now();
       const apiTtlSec =
         typeof data.expires_in === "number" && data.expires_in > 120
@@ -75,8 +75,22 @@ export const getKisAccessToken = async (): Promise<GetKisTokenResult> => {
   return { ...data, fromCache: false };
 };
 
-/** 라우트/다른 서버 코드에서 타입 분리만 필요할 때 (캐시 동일 적용) */
-export const getKisAccessTokenPayload = async (): Promise<KisTokenResponse> => {
-  const { access_token, token_type, expires_in } = await getKisAccessToken();
+export const getKisAccessTokenPayloadFor = async (
+  env: KisRestEnv,
+): Promise<KisTokenResponse> => {
+  const { access_token, token_type, expires_in } = await getKisAccessTokenFor(env);
   return { access_token, token_type, expires_in };
 };
+
+const requireMockEnv = (): KisRestEnv => {
+  const env = getKisRestEnv("mock");
+  if (!env) throw new Error(KIS_REST_ENV_MISSING);
+  return env;
+};
+
+/** 하위호환: mock 키 셋으로 호출 */
+export const getKisAccessToken = async (): Promise<GetKisTokenResult> =>
+  getKisAccessTokenFor(requireMockEnv());
+
+export const getKisAccessTokenPayload = async (): Promise<KisTokenResponse> =>
+  getKisAccessTokenPayloadFor(requireMockEnv());

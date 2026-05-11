@@ -1,38 +1,31 @@
 import axios, {
+  AxiosHeaders,
   type AxiosInstance,
   type AxiosRequestConfig,
-  AxiosHeaders,
 } from "axios";
-import { getKisRestEnv, KIS_REST_ENV_MISSING } from "../config/rest-env";
-import { getKisAccessTokenPayload } from "./access-token";
+
+import {
+  getKisRestEnv,
+  KIS_REST_ENV_MISSING,
+  type KisRestEnv,
+} from "../config/rest-env";
+import { getKisAccessTokenPayloadFor } from "./access-token";
 
 /**
  * KIS REST 호출(인증 TR). 서버 전용 — 브라우저 import 금지.
  *
- * @example
- * await kisHttp.get("/uapi/domestic-stock/v1/quotations/inquire-price", {
- *   headers: { tr_id: "FHKST01010100" },
- *   params: { fid_cond_mrkt_div_code: "J", fid_input_iscd: "005930" },
- * });
+ * - `kisHttp.*` : mock 기본 (잔고/현재가 등)
+ * - `kisHttpFor(env)` : 임의 env (실전 키 셋 등)
  *
- * tokenP(OAuth)는 Bearer 없음 → `kis-public-http` 의 `kisPublicPost`.
+ * tokenP(OAuth)는 Bearer 없음 → `kis-public-http` 의 `kisPublicPostFor`.
  */
 
-let singleton: AxiosInstance | null = null;
+/** mode + baseUrl + appKey 별 단일 인스턴스 */
+const registry = new Map<string, AxiosInstance>();
 
-/**
- * KIS REST용 axios 단일 인스턴스.
- * 모든 요청에 appkey/appsecret · Bearer(access_token · 캐시) 자동 추가.
- * TR별 헤더(`tr_id` 등)는 호출 시 `headers` 로 넘기면 기존 값과 합쳐짐.
- */
-export const getKisAxios = (): AxiosInstance => {
-  if (singleton) return singleton;
+const keyOf = (env: KisRestEnv) => `${env.mode}:${env.baseUrl}::${env.appKey}`;
 
-  const env = getKisRestEnv();
-  if (!env) {
-    throw new Error(KIS_REST_ENV_MISSING);
-  }
-
+const create = (env: KisRestEnv): AxiosInstance => {
   const client = axios.create({
     baseURL: env.baseUrl,
     headers: {
@@ -43,61 +36,110 @@ export const getKisAxios = (): AxiosInstance => {
   });
 
   client.interceptors.request.use(async (config) => {
-    const e = getKisRestEnv();
-    if (!e) {
-      throw new Error(KIS_REST_ENV_MISSING);
-    }
-    const { access_token } = await getKisAccessTokenPayload();
+    const { access_token } = await getKisAccessTokenPayloadFor(env);
     const next = AxiosHeaders.from(config.headers);
     next.set("authorization", `Bearer ${access_token}`);
-    next.set("appkey", e.appKey);
-    next.set("appsecret", e.appSecret);
+    next.set("appkey", env.appKey);
+    next.set("appsecret", env.appSecret);
     config.headers = next;
     return config;
   });
 
-  singleton = client;
   return client;
 };
 
-export const kisGet = async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  const { data } = await getKisAxios().get<T>(url, config);
+export const getKisAxiosFor = (env: KisRestEnv): AxiosInstance => {
+  const key = keyOf(env);
+  const hit = registry.get(key);
+  if (hit) return hit;
+  const inst = create(env);
+  registry.set(key, inst);
+  return inst;
+};
+
+export const kisGetFor = async <T = unknown>(
+  env: KisRestEnv,
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> => {
+  const { data } = await getKisAxiosFor(env).get<T>(url, config);
   return data;
 };
+
+export const kisPostFor = async <T = unknown>(
+  env: KisRestEnv,
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> => {
+  const { data } = await getKisAxiosFor(env).post<T>(url, body, config);
+  return data;
+};
+
+export const kisPutFor = async <T = unknown>(
+  env: KisRestEnv,
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> => {
+  const { data } = await getKisAxiosFor(env).put<T>(url, body, config);
+  return data;
+};
+
+export const kisPatchFor = async <T = unknown>(
+  env: KisRestEnv,
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> => {
+  const { data } = await getKisAxiosFor(env).patch<T>(url, body, config);
+  return data;
+};
+
+export const kisDeleteFor = async <T = unknown>(
+  env: KisRestEnv,
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> => {
+  const { data } = await getKisAxiosFor(env).delete<T>(url, config);
+  return data;
+};
+
+const requireMockEnv = (): KisRestEnv => {
+  const env = getKisRestEnv("mock");
+  if (!env) throw new Error(KIS_REST_ENV_MISSING);
+  return env;
+};
+
+/** 하위호환(mock 기본) */
+export const getKisAxios = (): AxiosInstance => getKisAxiosFor(requireMockEnv());
+
+export const kisGet = async <T = unknown>(url: string, config?: AxiosRequestConfig) =>
+  kisGetFor<T>(requireMockEnv(), url, config);
 
 export const kisPost = async <T = unknown>(
   url: string,
   body?: unknown,
   config?: AxiosRequestConfig,
-): Promise<T> => {
-  const { data } = await getKisAxios().post<T>(url, body, config);
-  return data;
-};
+) => kisPostFor<T>(requireMockEnv(), url, body, config);
 
 export const kisPut = async <T = unknown>(
   url: string,
   body?: unknown,
   config?: AxiosRequestConfig,
-): Promise<T> => {
-  const { data } = await getKisAxios().put<T>(url, body, config);
-  return data;
-};
+) => kisPutFor<T>(requireMockEnv(), url, body, config);
 
 export const kisPatch = async <T = unknown>(
   url: string,
   body?: unknown,
   config?: AxiosRequestConfig,
-): Promise<T> => {
-  const { data } = await getKisAxios().patch<T>(url, body, config);
-  return data;
-};
+) => kisPatchFor<T>(requireMockEnv(), url, body, config);
 
-export const kisDelete = async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  const { data } = await getKisAxios().delete<T>(url, config);
-  return data;
-};
+export const kisDelete = async <T = unknown>(
+  url: string,
+  config?: AxiosRequestConfig,
+) => kisDeleteFor<T>(requireMockEnv(), url, config);
 
-/** 자사 Base fetcher 패턴과 유사하게 묶어둠 */
 export const kisHttp = {
   get: kisGet,
   post: kisPost,
@@ -105,3 +147,17 @@ export const kisHttp = {
   patch: kisPatch,
   delete: kisDelete,
 } as const;
+
+export const kisHttpFor = (env: KisRestEnv) =>
+  ({
+    get: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
+      kisGetFor<T>(env, url, config),
+    post: <T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+      kisPostFor<T>(env, url, body, config),
+    put: <T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+      kisPutFor<T>(env, url, body, config),
+    patch: <T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig) =>
+      kisPatchFor<T>(env, url, body, config),
+    delete: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
+      kisDeleteFor<T>(env, url, config),
+  }) as const;
