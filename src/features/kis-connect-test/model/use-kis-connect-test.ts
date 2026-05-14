@@ -14,7 +14,7 @@ export type KisConnectTestVm = {
   loadBoth: () => void;
 };
 
-/** KIS 연동 테스트 위젯의 비즈니스 로직(서버 데이터·트리거)만 모은 훅 */
+/** KIS 연동 테스트: 서버 데이터·트리거만 모은 훅 */
 export const useKisConnectTest = (): KisConnectTestVm => {
   const tokenQuery = useKisTokenQuery();
   const stockQuery = useKisStockQuery();

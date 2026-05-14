@@ -10,7 +10,7 @@ Next.js(App Router)와 **한국투자 Open API(KIS)** 연동 샘플입니다.
 - **Next.js** 16 (`src/app`)
 - **React** 19, **TypeScript**
 - **axios** (KIS REST)
-- 폴더 구성은 **Feature-Sliced Design**에 가깝게 (`entities`, `widgets`, `shared` + Next용 `app`)
+- 폴더 구성은 **Feature-Sliced Design**에 가깝게 (`app`, `widgets`, `features`, `entities`, `shared`)
 
 ## 시작하기
 
@@ -21,7 +21,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000) — 토큰·시세 테스트 UI (`widgets/kis-connect-test`).
+브라우저에서 [http://localhost:3000](http://localhost:3000) — 토큰·시세 테스트 UI는 [`/dev/kis-connect-test-view`](http://localhost:3000/dev/kis-connect-test-view) (`features/kis-connect-test`).
 
 ```bash
 pnpm build
@@ -60,6 +60,14 @@ src/app/                    # Next 레이아웃·페이지·Route Handlers
   api/token/route.ts
   api/stock/route.ts
 
+src/widgets/                # 페이지 단위 조합 (여러 features 묶기)
+  home-dashboard/           # 메인 화면 레이아웃
+
+src/features/               # 사용자 시나리오 단위 (FSD features)
+  market-ranking/           # 실시간 순위 + WS 브리지 UI
+  portfolio-balance/        # 내 잔고 요약 + 보유 종목
+  kis-connect-test/       # 토큰·시세 연동 샘플 UI
+
 src/entities/kis/
   api/
     access-token.ts         # tokenP + 인메모리 캐시
@@ -69,8 +77,7 @@ src/entities/kis/
   config/rest-env.ts
   model/types.ts
 
-src/widgets/kis-connect-test/   # 샘플 UI
-src/shared/lib/                  # 공용 유틸 (format-axios-error 등)
+src/shared/lib/             # 공용 유틸 (format-axios-error 등)
 ```
 
 참고: `kis-http-oauth.ts`가 있다면 `kis-public-http.ts`와 역할이 겹칠 수 있어, 실제 import 기준으로 하나로 정리하는 것을 권장합니다.

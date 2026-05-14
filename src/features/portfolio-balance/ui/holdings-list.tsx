@@ -1,7 +1,7 @@
 "use client";
 
-import { useHoldingsList } from "./model/use-holdings-list";
-import { HoldingsListView } from "./ui/holdings-list-view";
+import { useHoldingsList } from "../model/use-holdings-list";
+import { HoldingsListView } from "./holdings-list-view";
 
 export const HoldingsList = () => {
   const vm = useHoldingsList();

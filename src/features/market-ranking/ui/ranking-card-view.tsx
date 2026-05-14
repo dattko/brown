@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import {
   formatKrw,
@@ -26,7 +25,6 @@ type Props = {
   items: RankingItem[];
   valueColumn: ValueColumn;
   isLoading: boolean;
-  isFetching: boolean;
   errorMessage: string | null;
 };
 
@@ -55,15 +53,11 @@ export const RankingCardView = ({
   items,
   valueColumn,
   isLoading,
-  isFetching,
   errorMessage,
 }: Props) => (
   <Card className="flex h-full flex-col">
     <CardHeader className="pb-2">
-      <div className="flex items-center justify-between">
-        <CardTitle>{title}</CardTitle>
-        <LiveBadge active={isFetching} />
-      </div>
+      <CardTitle>{title}</CardTitle>
       <CardDescription>{description}</CardDescription>
     </CardHeader>
     <CardContent className="px-0 pb-2">
@@ -112,18 +106,6 @@ export const RankingCardView = ({
       )}
     </CardContent>
   </Card>
-);
-
-const LiveBadge = ({ active }: { active: boolean }) => (
-  <Badge variant={active ? "success" : "muted"} className="gap-1.5">
-    <span
-      className={cn(
-        "size-1.5 rounded-full",
-        active ? "bg-emerald-300 animate-pulse" : "bg-muted-foreground/60",
-      )}
-    />
-    LIVE 5s
-  </Badge>
 );
 
 const LoadingRows = () => (

@@ -1,4 +1,4 @@
-import { KisConnectTest } from "@/widgets/kis-connect-test/kis-connect-test";
+import { KisConnectTest } from "@/features/kis-connect-test";
 
 const KisConnectTestPage = () => <KisConnectTest />;
 

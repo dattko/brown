@@ -68,7 +68,13 @@ type TabsTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   value: string;
 };
 
-export const TabsTrigger = ({ value, className, ...props }: TabsTriggerProps) => {
+export const TabsTrigger = ({
+  value,
+  className,
+  onClick,
+  onMouseDown,
+  ...props
+}: TabsTriggerProps) => {
   const { value: current, setValue } = useTabsContext();
   const active = current === value;
   return (
@@ -76,7 +82,6 @@ export const TabsTrigger = ({ value, className, ...props }: TabsTriggerProps) =>
       type="button"
       role="tab"
       aria-selected={active}
-      onClick={() => setValue(value)}
       className={cn(
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-3.5",
         active
@@ -85,6 +90,15 @@ export const TabsTrigger = ({ value, className, ...props }: TabsTriggerProps) =>
         className,
       )}
       {...props}
+      onMouseDown={(e) => {
+        onMouseDown?.(e);
+        // Mouse focus scrolls the focused tab into view and feels like the page "jumps" / reloads.
+        if (e.button === 0) e.preventDefault();
+      }}
+      onClick={(e) => {
+        onClick?.(e);
+        setValue(value);
+      }}
     />
   );
 };
