@@ -20,6 +20,8 @@ import {
 } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 
+import { StockSearchBar } from "@/features/stock-search";
+
 import { useStockDetailQuery } from "../api/use-stock-detail-query";
 
 type Props = {
@@ -83,10 +85,11 @@ export const StockDetailView = ({ ticker, initialName }: Props) => {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8 px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-fit")}>
           ← 홈
         </Link>
+        <StockSearchBar compact className="w-full sm:max-w-xs" />
       </div>
 
       {!valid ? (

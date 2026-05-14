@@ -104,7 +104,7 @@ export const PortfolioSummaryView = ({
       />
       <SummaryCard
         title="예수금"
-        description="주문 가능 현금(D+0~)"
+        description="주문 가능 현금"
         value={summary ? formatKrw(summary.cashTotal) : null}
         isLoading={isLoading}
       />
