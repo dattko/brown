@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   Card,
   CardContent,
@@ -69,39 +71,44 @@ export const RankingCardView = ({
         <p className="px-6 pb-2 text-sm text-muted-foreground">데이터가 없습니다.</p>
       ) : (
         <ul className="divide-y divide-border/60">
-          {items.map((item) => (
-            <li
-              key={`${item.rank}-${item.ticker}`}
-              className="flex items-center gap-3 px-6 py-2 text-sm hover:bg-accent/30"
-            >
-              <span className="w-6 text-right text-xs font-medium text-muted-foreground tabular-nums">
-                {item.rank}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{item.name}</div>
-                <div className="text-xs text-muted-foreground">{item.ticker}</div>
-              </div>
-              <div className="text-right">
-                <div className="tabular-nums">{formatKrw(item.price)}</div>
-                <div
-                  className={cn(
-                    "text-xs tabular-nums",
-                    profitColor(item.changeRate),
-                  )}
+          {items.map((item) => {
+            const href = `/stock/${item.ticker}?${new URLSearchParams({ name: item.name }).toString()}`;
+            return (
+              <li key={`${item.rank}-${item.ticker}`} className="py-0">
+                <Link
+                  href={href}
+                  className="flex items-center gap-3 px-6 py-2 text-sm transition-colors hover:bg-accent/30"
                 >
-                  {formatSignedPercent(item.changeRate)}
-                </div>
-              </div>
-              <div
-                className={cn(
-                  "w-24 text-right text-xs tabular-nums",
-                  valueColor(item, valueColumn),
-                )}
-              >
-                {formatValue(item, valueColumn)}
-              </div>
-            </li>
-          ))}
+                  <span className="w-6 text-right text-xs font-medium text-muted-foreground tabular-nums">
+                    {item.rank}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground">{item.ticker}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="tabular-nums">{formatKrw(item.price)}</div>
+                    <div
+                      className={cn(
+                        "text-xs tabular-nums",
+                        profitColor(item.changeRate),
+                      )}
+                    >
+                      {formatSignedPercent(item.changeRate)}
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "w-24 text-right text-xs tabular-nums",
+                      valueColor(item, valueColumn),
+                    )}
+                  >
+                    {formatValue(item, valueColumn)}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </CardContent>

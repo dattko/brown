@@ -49,6 +49,7 @@ pnpm start
 |--------|------|------|
 | `GET` | `/api/token` | KIS 접근 토큰 발급(캐시 우선), JSON에 `cached` 포함 가능 |
 | `GET` | `/api/stock` | 샘플: 국내 현재가(inquire-price), `KIS_STOCK_TICKER` 사용 |
+| `GET` | `/api/stock/[ticker]` | 종목코드별 현재가(inquire-price), 6자리 숫자 |
 
 실제 한국투자 호출·캐시 로직은 **`src/entities/kis`** 에 있습니다.  
 `route.ts`는 요청을 받아 엔티티 함수를 호출하고 `NextResponse.json`만 감싸는 **얇은 BFF 역할**입니다.
@@ -66,6 +67,7 @@ src/widgets/                # 페이지 단위 조합 (여러 features 묶기)
 src/features/               # 사용자 시나리오 단위 (FSD features)
   market-ranking/           # 실시간 순위 + WS 브리지 UI
   portfolio-balance/        # 내 잔고 요약 + 보유 종목
+  stock-detail/             # 종목 상세(시세)
   kis-connect-test/       # 토큰·시세 연동 샘플 UI
 
 src/entities/kis/

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -22,11 +24,21 @@ type Props = HoldingsListVm;
 const profitColor = (value: number) =>
   value > 0 ? "text-rose-400" : value < 0 ? "text-sky-400" : "text-muted-foreground";
 
-export const HoldingsListView = ({ holdings, isLoading, errorMessage }: Props) => (
-  <Card>
+export const HoldingsListView = ({ holdings, isLoading, errorMessage }: Props) => {
+  const router = useRouter();
+
+  const goDetail = (ticker: string, name: string) => {
+    const q = new URLSearchParams({ name });
+    void router.push(`/stock/${ticker}?${q.toString()}`);
+  };
+
+  return (
+    <Card>
     <CardHeader>
       <CardTitle>보유 종목</CardTitle>
-      <CardDescription>현재 잔고에 들어 있는 종목과 수익 현황입니다.</CardDescription>
+      <CardDescription>
+        현재 잔고에 들어 있는 종목과 수익 현황입니다. 행을 클릭하면 상세 화면으로 이동합니다.
+      </CardDescription>
     </CardHeader>
     <CardContent className="px-0 pb-0">
       {isLoading ? (
@@ -53,7 +65,17 @@ export const HoldingsListView = ({ holdings, isLoading, errorMessage }: Props) =
               {holdings.map((h) => (
                 <tr
                   key={h.ticker}
-                  className="border-b border-border/60 last:border-b-0 hover:bg-accent/30"
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`${h.name} 상세 보기`}
+                  onClick={() => goDetail(h.ticker, h.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      goDetail(h.ticker, h.name);
+                    }
+                  }}
+                  className="cursor-pointer border-b border-border/60 last:border-b-0 hover:bg-accent/30"
                 >
                   <Td className="text-left">
                     <div className="font-medium">{h.name}</div>
@@ -77,7 +99,8 @@ export const HoldingsListView = ({ holdings, isLoading, errorMessage }: Props) =
       )}
     </CardContent>
   </Card>
-);
+  );
+};
 
 const Th = ({ className, children }: React.HTMLAttributes<HTMLTableCellElement>) => (
   <th
